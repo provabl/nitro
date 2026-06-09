@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Scott Friedman
+// SPDX-FileCopyrightText: 2026 Playground Logic LLC
 // SPDX-License-Identifier: Apache-2.0
 
 // Package attestor runs the provabl/evidence nitro provider against a document
