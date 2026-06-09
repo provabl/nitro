@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Scott Friedman
+// SPDX-FileCopyrightText: 2026 Playground Logic LLC
 // SPDX-License-Identifier: Apache-2.0
 
 // Command nitro verifies an AWS Nitro Enclave attestation document and writes the
