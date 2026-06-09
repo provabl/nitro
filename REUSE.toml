@@ -1,7 +1,16 @@
 version = 1
 
 [[annotations]]
-path = ["**.json", "**.yaml", "**.yml", "**.md", "**.toml", "**.pem", "**.bin"]
+path = ["**.json", "**.yaml", "**.yml", "**.md", "**.toml", "**.bin"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Playground Logic LLC"
 SPDX-License-Identifier = "Apache-2.0"
+
+# The AWS Nitro Attestation PKI root is Amazon's certificate, vendored here for
+# offline chain verification. We claim no copyright over it; it is the public root
+# of the AWS Nitro attestation trust chain, redistributed as such.
+[[annotations]]
+path = ["internal/nsm/AWS_NitroEnclaves_Root-G1.pem"]
+precedence = "override"
+SPDX-FileCopyrightText = "Amazon Web Services, Inc."
+SPDX-License-Identifier = "LicenseRef-AWS-Nitro-Root"
