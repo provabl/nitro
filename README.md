@@ -73,4 +73,4 @@ make build-nsm   # compile-check the enclave-only /dev/nsm source
 
 ## License
 
-Apache 2.0. Copyright 2026 Scott Friedman.
+Apache 2.0. Copyright 2026 Playground Logic LLC.
