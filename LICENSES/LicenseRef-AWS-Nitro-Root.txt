@@ -1,0 +1,19 @@
+AWS Nitro Attestation PKI Root Certificate
+===========================================
+
+The file internal/nsm/AWS_NitroEnclaves_Root-G1.pem is the AWS Nitro Enclaves
+Attestation PKI root certificate (G1), published by Amazon Web Services, Inc. at:
+
+    https://aws-nitro-enclaves.amazonaws.com/AWS_NitroEnclaves_Root-G1.zip
+
+It is the public root of trust for AWS Nitro Enclave attestation documents.
+Amazon publishes it for the express purpose of incorporation into attestation
+verification software (see "Verifying the root of trust",
+https://docs.aws.amazon.com/enclaves/latest/user/verify-root.html). It is
+vendored here, unmodified, so this tool can verify the certificate chain of a
+Nitro attestation document offline.
+
+Provabl / Playground Logic LLC claims no copyright over this certificate. It is
+the property of Amazon Web Services, Inc. and is redistributed as part of the
+AWS Nitro attestation trust chain. SHA-256 fingerprint:
+64:1A:03:21:A3:E2:44:EF:E4:56:46:31:95:D6:06:31:7E:D7:CD:CC:3C:17:56:E0:98:93:F3:C6:8F:79:BB:5B
