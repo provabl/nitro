@@ -31,9 +31,11 @@ internal/attestor/     — run the kernel → write .nitro/attestation.json + th
    `github.com/provabl/evidence`; the kernel never imports nitro. All COSE/CBOR/X.509 deps live here.
 2. **The Verifier attests signature + chain only.** Nonce binding and PCR policy belong to the
    kernel appraiser, not the Verifier. Don't duplicate them.
-3. **The `/dev/nsm` device read is enclave-only.** It lives behind `//go:build linux && nsm` with a
-   stub for every other build, is compile-checked (`make build-nsm`) but never run in CI, and must
-   never be in the default build path.
+3. **The `/dev/nsm` device read is enclave-only.** The ioctl is wired (and was validated on real
+   Nitro hardware — see nitro#4) but lives behind `//go:build linux && nsm` with a stub for every
+   other build, is compile-checked (`make build-nsm`) but never *run* in CI, and must never be in
+   the default build path. The parse path is exercisable offline via the captured
+   `internal/nsm/testdata/real-attestation.bin` fixture.
 4. **Tag keys come from the contract, not literals scattered in code.** `attest:nitro-attested`
    matches ground's SCP and attest's `PlatformAttributes`; keep it defined once.
 5. **The artifact shape matches attest's `PlatformAttributes` json tags** (`nitro_attested`,

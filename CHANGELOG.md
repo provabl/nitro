@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ## [Unreleased]
 
+### Added
+
+- **Live `/dev/nsm` device read** (closes #4): `nsmAttest` now issues the real NSM ioctl
+  (`_IOWR(0x0A, 0, …)` over a two-iovec `nsm_message`, cross-checked against `github.com/hf/nsm`),
+  decodes the `{"Attestation": {"document": …}}` response, and returns the live COSE_Sign1
+  attestation document. `nitro attest --device` reads a fresh, nonce-bound document from `/dev/nsm`
+  inside an enclave (vs `--doc` for a captured file). **Validated on real Nitro hardware** (m5.xlarge,
+  us-west-2): the ioctl returned a 4493-byte document binding the supplied challenge nonce.
+
+### Fixed
+
+- **Untagged COSE_Sign1 from the NSM device** (#4): the NSM device emits an *untagged* COSE_Sign1
+  (CBOR array, head `0x84`), which `veraison/go-cose` rejected (`invalid COSE_Sign1_Tagged object`)
+  — so the live document never parsed, a bug only reachable on real hardware. `Parse` now normalizes
+  an untagged document to the tagged form before decoding. Regression-pinned by
+  `internal/nsm/testdata/real-attestation.bin`, a genuine document captured from an enclave.
+
 ### Changed
 
 - Copyright holder normalized to Playground Logic LLC.

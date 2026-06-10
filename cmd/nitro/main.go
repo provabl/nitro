@@ -44,6 +44,7 @@ func rootCmd() *cobra.Command {
 func attestCmd() *cobra.Command {
 	var (
 		docPath      string
+		useDevice    bool
 		roleARN      string
 		nitroDir     string
 		region       string
@@ -60,10 +61,14 @@ attest:nitro-attested IAM tag that ground's SCP checks.
 
 Off-enclave, supply a captured document with --doc. A document minted for a
 different challenge verifies its signature and PCRs but reports
-nonce_verified=false (it is not fresh for this run).`,
+nonce_verified=false (it is not fresh for this run).
+
+Inside a Nitro enclave, use --device to read a fresh document directly from
+/dev/nsm (the binary must be built with -tags nsm). The live device read binds
+this run's challenge natively, so nonce_verified=true.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if docPath == "" {
-				return fmt.Errorf("--doc is required off-enclave (the /dev/nsm source needs the nsm build tag inside an enclave)")
+			if (docPath == "") == !useDevice {
+				return fmt.Errorf("specify exactly one of --doc (a captured document) or --device (read /dev/nsm inside an enclave)")
 			}
 			ctx := context.Background()
 
@@ -76,7 +81,14 @@ nonce_verified=false (it is not fresh for this run).`,
 				tagger = t
 			}
 
-			a := attestor.New(nsm.FileSource{Path: docPath}, nsm.NewVerifier(), tagger, nitroDir)
+			subject := docPath
+			var a *attestor.Attestor
+			if useDevice {
+				subject = "/dev/nsm"
+				a = attestor.New(nsm.DeviceSource{}, nsm.NewVerifier(), tagger, nitroDir)
+			} else {
+				a = attestor.New(nsm.FileSource{Path: docPath}, nsm.NewVerifier(), tagger, nitroDir)
+			}
 
 			expected := map[string]string{}
 			if expectedPCR0 != "" {
@@ -92,7 +104,7 @@ nonce_verified=false (it is not fresh for this run).`,
 			}
 
 			p := res.Platform
-			fmt.Printf("Attestation: %s\n\n", docPath)
+			fmt.Printf("Attestation: %s\n\n", subject)
 			fmt.Printf("  context.platform.nitro_attested  = %v\n", p.NitroAttested)
 			fmt.Printf("  context.platform.module_id       = %s\n", p.ModuleID)
 			fmt.Printf("  context.platform.nonce_verified  = %v\n", p.NonceVerified)
@@ -110,6 +122,7 @@ nonce_verified=false (it is not fresh for this run).`,
 		},
 	}
 	cmd.Flags().StringVar(&docPath, "doc", "", "path to a captured attestation document (CBOR/COSE_Sign1)")
+	cmd.Flags().BoolVar(&useDevice, "device", false, "read a fresh document from /dev/nsm (inside a Nitro enclave; requires -tags nsm)")
 	cmd.Flags().StringVar(&roleARN, "role-arn", "", "IAM role ARN to tag attest:nitro-attested=true when attested")
 	cmd.Flags().StringVar(&nitroDir, "nitro-dir", ".nitro", "output directory for attestation.json")
 	cmd.Flags().StringVar(&region, "region", "us-east-1", "AWS region for IAM tagging")

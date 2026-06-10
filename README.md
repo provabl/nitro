@@ -51,6 +51,9 @@ nitro attest --doc attestation.bin --role-arn arn:aws:iam::123456789012:role/Wor
 
 # Require specific enclave measurements
 nitro attest --doc attestation.bin --expected-pcr0 7fb5c5…
+
+# Inside a Nitro enclave: read a fresh document straight from /dev/nsm
+nitro attest --device --expected-pcr0 7fb5c5…
 ```
 
 ## Document sources
@@ -58,10 +61,12 @@ nitro attest --doc attestation.bin --expected-pcr0 7fb5c5…
 | Source | When | Freshness |
 |---|---|---|
 | `--doc <file>` | a document captured from an enclave, or AWS's public sample | live doc → `nonce_verified=true`; a sample minted for a different challenge → `nonce_verified=false` (correct: not fresh) |
-| `/dev/nsm` device | running **inside** a Nitro enclave | always fresh — the enclave embeds the challenge |
+| `--device` (`/dev/nsm`) | running **inside** a Nitro enclave | always fresh — the read embeds this run's challenge nonce |
 
 The `/dev/nsm` device source is compiled only under the `nsm` build tag (`make build-nsm`) and runs
-**only inside an enclave**. It is compile-checked in CI but cannot be exercised off-enclave.
+**only inside an enclave**. CI compile-checks it; the ioctl itself was validated on real Nitro
+hardware (m5.xlarge, us-west-2) and a captured document is vendored as
+`internal/nsm/testdata/real-attestation.bin` to pin the parse path offline.
 
 ## Development
 

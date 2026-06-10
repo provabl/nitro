@@ -29,10 +29,34 @@ type AttestationDoc struct {
 	Nonce       []byte          `cbor:"nonce"`
 }
 
+// coseSign1Tag is the CBOR tag (18) that prefixes a tagged COSE_Sign1 structure.
+// Encoded as a head byte it is 0xd2 (major type 6, value 18).
+const coseSign1Tag = 0xd2
+
+// untaggedSign1Head is the CBOR head byte of an UNTAGGED COSE_Sign1: an array of
+// four elements (0x80 | 4). AWS's NSM device returns the attestation document in
+// this untagged form, but veraison/go-cose's UnmarshalCBOR only accepts the
+// tagged form — so a real on-device document must be tag-wrapped before decoding.
+// (Confirmed on real Nitro hardware: the captured document begins 0x84, and
+// UnmarshalCBOR rejects it with "invalid COSE_Sign1_Tagged object" until the
+// tag is prepended. See testdata/real-attestation.bin and nitro#4.)
+const untaggedSign1Head = 0x84
+
 // Parse decodes the raw attestation blob into its COSE_Sign1 envelope and the
-// CBOR attestation payload. The blob is a (tagged or untagged) COSE_Sign1
-// structure whose payload is the CBOR-encoded AttestationDoc.
+// CBOR attestation payload. The blob is a tagged or untagged COSE_Sign1 structure
+// whose payload is the CBOR-encoded AttestationDoc; an untagged blob (what the NSM
+// device emits) is normalized to the tagged form go-cose requires.
 func Parse(raw []byte) (*cose.Sign1Message, *AttestationDoc, error) {
+	if len(raw) == 0 {
+		return nil, nil, fmt.Errorf("decode COSE_Sign1: empty document")
+	}
+	// Normalize an untagged COSE_Sign1 (array(4), head 0x84) to the tagged form by
+	// prepending the COSE_Sign1 tag, which is what go-cose's decoder expects.
+	if raw[0] == untaggedSign1Head {
+		tagged := make([]byte, 0, len(raw)+1)
+		tagged = append(tagged, coseSign1Tag)
+		raw = append(tagged, raw...)
+	}
 	var msg cose.Sign1Message
 	if err := msg.UnmarshalCBOR(raw); err != nil {
 		return nil, nil, fmt.Errorf("decode COSE_Sign1: %w", err)
