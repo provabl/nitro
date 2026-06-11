@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Added
 
+- **`nitro preflight`** (provabl#16): verifies the calling principal holds the IAM action nitro needs
+  (`iam:TagRole`, to write `attest:nitro-attested`) via read-only `iam:SimulatePrincipalPolicy`
+  against the caller ARN. Renders ✓/✗ per action with remediation; exits non-zero on any deny;
+  fail-closed on an un-callable check. New `internal/preflight` (mock-driven tests). Mirrors
+  attest/ground; each suite tool carries its own copy. See `docs/required-permissions.md`.
 - **Live `/dev/nsm` device read** (closes #4): `nsmAttest` now issues the real NSM ioctl
   (`_IOWR(0x0A, 0, …)` over a two-iovec `nsm_message`, cross-checked against `github.com/hf/nsm`),
   decodes the `{"Attestation": {"document": …}}` response, and returns the live COSE_Sign1

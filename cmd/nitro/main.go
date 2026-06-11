@@ -20,6 +20,7 @@ import (
 
 	"github.com/provabl/nitro/internal/attestor"
 	"github.com/provabl/nitro/internal/nsm"
+	"github.com/provabl/nitro/internal/preflight"
 )
 
 var version = "dev"
@@ -37,8 +38,49 @@ func rootCmd() *cobra.Command {
 		Short:   "AWS Nitro Enclave attestation producer for the Provabl suite",
 		Version: version,
 	}
-	cmd.AddCommand(attestCmd())
+	cmd.AddCommand(attestCmd(), preflightCmd())
 	return cmd
+}
+
+// preflightCmd verifies the calling principal holds the IAM actions nitro needs.
+func preflightCmd() *cobra.Command {
+	var region string
+	cmd := &cobra.Command{
+		Use:   "preflight",
+		Short: "Verify the calling principal holds the IAM permissions nitro needs",
+		Long: `Check that the calling AWS principal can perform nitro's AWS-touching actions
+(iam:TagRole, to write attest:nitro-attested) via read-only
+iam:SimulatePrincipalPolicy against the caller — it evaluates, it does not act.
+A denied action prints a remediation and the command exits non-zero. See
+docs/required-permissions.md.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runPreflight(preflight.CheckCallerPermissions(cmd.Context(), region))
+		},
+	}
+	cmd.Flags().StringVar(&region, "region", "us-east-1", "AWS region")
+	return cmd
+}
+
+// runPreflight renders preflight results and returns a non-nil error if any failed.
+func runPreflight(results []preflight.Result) error {
+	failures := 0
+	for _, r := range results {
+		if r.Status {
+			fmt.Printf("  ✓ %s\n", r.Name)
+			continue
+		}
+		failures++
+		fmt.Printf("  ✗ %s: %s\n", r.Name, r.Detail)
+		if r.Remediation != "" {
+			fmt.Printf("      Remediation: %s\n", r.Remediation)
+		}
+	}
+	fmt.Println()
+	if failures > 0 {
+		return fmt.Errorf("preflight failed: %d required permission(s) missing", failures)
+	}
+	fmt.Println("✓ All required permissions present")
+	return nil
 }
 
 func attestCmd() *cobra.Command {
