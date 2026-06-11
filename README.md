@@ -54,6 +54,10 @@ nitro attest --doc attestation.bin --expected-pcr0 7fb5c5…
 
 # Inside a Nitro enclave: read a fresh document straight from /dev/nsm
 nitro attest --device --expected-pcr0 7fb5c5…
+
+# Bind to the vetted image: auto-load the golden PCRs from this instance's source-AMI attest:pcr* tags
+# (the ones `vet ami-reference` recorded; reads IMDS + ec2:DescribeImages on the instance)
+nitro attest --device --expected-from-ami
 ```
 
 ## Document sources
