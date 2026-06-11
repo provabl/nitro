@@ -14,11 +14,14 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/spf13/cobra"
 
 	"github.com/provabl/nitro/internal/attestor"
+	"github.com/provabl/nitro/internal/goldenpcr"
 	"github.com/provabl/nitro/internal/nsm"
 	"github.com/provabl/nitro/internal/preflight"
 )
@@ -85,13 +88,14 @@ func runPreflight(results []preflight.Result) error {
 
 func attestCmd() *cobra.Command {
 	var (
-		docPath      string
-		useDevice    bool
-		roleARN      string
-		nitroDir     string
-		region       string
-		expectedPCR0 string
-		expectedPCR8 string
+		docPath       string
+		useDevice     bool
+		roleARN       string
+		nitroDir      string
+		region        string
+		expectedPCR0  string
+		expectedPCR8  string
+		expectFromAMI bool
 	)
 	cmd := &cobra.Command{
 		Use:   "attest",
@@ -133,6 +137,19 @@ this run's challenge natively, so nonce_verified=true.`,
 			}
 
 			expected := map[string]string{}
+			if expectFromAMI {
+				golden, err := resolveGoldenPCRs(ctx, region)
+				if err != nil {
+					return fmt.Errorf("--expected-from-ami: %w", err)
+				}
+				if len(golden) == 0 {
+					return fmt.Errorf("--expected-from-ami: source AMI carries no attest:pcr* golden tags (run 'vet ami-reference' first)")
+				}
+				for idx, v := range golden {
+					expected[idx] = v
+				}
+			}
+			// Explicit --expected-pcrN flags override the AMI-derived values.
 			if expectedPCR0 != "" {
 				expected["0"] = expectedPCR0
 			}
@@ -170,7 +187,19 @@ this run's challenge natively, so nonce_verified=true.`,
 	cmd.Flags().StringVar(&region, "region", "us-east-1", "AWS region for IAM tagging")
 	cmd.Flags().StringVar(&expectedPCR0, "expected-pcr0", "", "require this PCR0 (enclave image) hex value")
 	cmd.Flags().StringVar(&expectedPCR8, "expected-pcr8", "", "require this PCR8 (signing cert) hex value")
+	cmd.Flags().BoolVar(&expectFromAMI, "expected-from-ami", false, "load expected PCRs from this instance's source-AMI attest:pcr* tags (read on the live instance via IMDS + DescribeImages); --expected-pcrN overrides")
 	return cmd
+}
+
+// resolveGoldenPCRs reads the golden boot PCRs recorded on this instance's source
+// AMI (the attest:pcr* tags vet ami-reference writes), keyed by index → hex. Only
+// meaningful when nitro runs on the live instance.
+func resolveGoldenPCRs(ctx context.Context, region string) (map[string]string, error) {
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(region))
+	if err != nil {
+		return nil, fmt.Errorf("load AWS config: %w", err)
+	}
+	return goldenpcr.Resolve(ctx, imds.NewFromConfig(cfg), ec2.NewFromConfig(cfg))
 }
 
 // awsIAMTagger adapts the AWS IAM client to attestor.IAMTagger.
