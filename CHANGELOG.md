@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Changed
 
+- **nitro now writes `attest:enclave-attested`** (was the conflated `attest:nitro-attested`), per
+  provabl ADR 0003 / provabl#30 (nitro#10). The enclave producer and the boot producer (`tpm`)
+  previously wrote the same `attest:nitro-attested` tag, but they prove different properties at
+  different trust strengths — nitro proves a verified Nitro **Enclave**, tpm proves a measured OS
+  **boot** (NitroTPM). The conflated tag is split per property: nitro writes `attest:enclave-attested`,
+  tpm writes `attest:boot-attested`. A tag names what was proven, not which tool proved it. A
+  writer-scoped conformance test (`internal/attestor/schema_conformance_test.go`, embedding the
+  canonical `attest-tags-schema.json` v3) locks nitro's constant to the registry's `writer:"nitro"`
+  row and fails if the pre-split tag reappears. `TagNitroAttested` → `TagEnclaveAttested`.
 - **SLSA L3 release provenance** (provabl#5): `release.yml` now generates provenance via the
   `slsa-framework/slsa-github-generator` reusable workflow (isolated, non-falsifiable builder)
   instead of `actions/attest-build-provenance` (L2). One runner cross-compiles all targets and emits

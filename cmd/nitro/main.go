@@ -3,7 +3,7 @@
 
 // Command nitro verifies an AWS Nitro Enclave attestation document and writes the
 // suite's durable outputs: .nitro/attestation.json (read by attest as
-// context.platform.*) and, optionally, the attest:nitro-attested IAM tag (checked
+// context.platform.*) and, optionally, the attest:enclave-attested IAM tag (checked
 // by ground's SCP).
 package main
 
@@ -52,7 +52,7 @@ func preflightCmd() *cobra.Command {
 		Use:   "preflight",
 		Short: "Verify the calling principal holds the IAM permissions nitro needs",
 		Long: `Check that the calling AWS principal can perform nitro's AWS-touching actions
-(iam:TagRole, to write attest:nitro-attested) via read-only
+(iam:TagRole, to write attest:enclave-attested) via read-only
 iam:SimulatePrincipalPolicy against the caller — it evaluates, it does not act.
 A denied action prints a remediation and the command exits non-zero. See
 docs/required-permissions.md.`,
@@ -103,7 +103,7 @@ func attestCmd() *cobra.Command {
 		Long: `Verify an AWS Nitro Enclave attestation document, writing the lowered
 result to .nitro/attestation.json for attest's context.platform.* and,
 when --role-arn is given and the document is attested, the
-attest:nitro-attested IAM tag that ground's SCP checks.
+attest:enclave-attested IAM tag that ground's SCP checks.
 
 Off-enclave, supply a captured document with --doc. A document minted for a
 different challenge verifies its signature and PCRs but reports
@@ -171,7 +171,7 @@ this run's challenge natively, so nonce_verified=true.`,
 			fmt.Printf("  context.platform.pcr0            = %s\n", p.PCR0)
 			fmt.Printf("\n✓ Written to %s\n", res.WrotePath)
 			if res.TaggedRole != "" {
-				fmt.Printf("✓ Tagged role %s: %s=true\n", res.TaggedRole, attestor.TagNitroAttested)
+				fmt.Printf("✓ Tagged role %s: %s=true\n", res.TaggedRole, attestor.TagEnclaveAttested)
 			}
 			if !p.NitroAttested {
 				fmt.Printf("\n✗ Not attested: %s\n", res.Reason)
@@ -182,7 +182,7 @@ this run's challenge natively, so nonce_verified=true.`,
 	}
 	cmd.Flags().StringVar(&docPath, "doc", "", "path to a captured attestation document (CBOR/COSE_Sign1)")
 	cmd.Flags().BoolVar(&useDevice, "device", false, "read a fresh document from /dev/nsm (inside a Nitro enclave; requires -tags nsm)")
-	cmd.Flags().StringVar(&roleARN, "role-arn", "", "IAM role ARN to tag attest:nitro-attested=true when attested")
+	cmd.Flags().StringVar(&roleARN, "role-arn", "", "IAM role ARN to tag attest:enclave-attested=true when attested")
 	cmd.Flags().StringVar(&nitroDir, "nitro-dir", ".nitro", "output directory for attestation.json")
 	cmd.Flags().StringVar(&region, "region", "us-east-1", "AWS region for IAM tagging")
 	cmd.Flags().StringVar(&expectedPCR0, "expected-pcr0", "", "require this PCR0 (enclave image) hex value")

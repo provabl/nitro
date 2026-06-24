@@ -20,9 +20,13 @@ AWS Nitro Enclave attestation document and turns the verdict into the durable ou
 the suite consumes:
 
 ```
-enclave NSM document  ──►  nitro  ──►  .nitro/attestation.json   (read by attest → context.platform.*)
-                                  └─►  attest:nitro-attested tag  (checked by ground's SCP)
+enclave NSM document  ──►  nitro  ──►  .nitro/attestation.json     (read by attest → context.platform.*)
+                                  └─►  attest:enclave-attested tag  (checked by ground's SCP)
 ```
+
+`attest:enclave-attested` is the enclave-integrity attestation tag — distinct from `tpm`'s
+`attest:boot-attested` (measured-OS boot). They prove different properties at different trust
+strengths and are deliberately not conflated (provabl ADR 0003).
 
 It runs the [`provabl/evidence`](https://github.com/provabl/evidence) nitro provider in-process:
 the appraiser binds the challenge nonce natively, verifies the COSE_Sign1 signature, and checks

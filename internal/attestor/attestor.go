@@ -3,8 +3,8 @@
 
 // Package attestor runs the provabl/evidence nitro provider against a document
 // source and turns the verdict into the suite's durable outputs: a
-// .nitro/attestation.json file (read by attest as context.platform.*) and an
-// attest:nitro-attested IAM principal tag (checked by ground's SCP).
+// .nitro/attestation.json file (read by attest as context.platform.*) and the
+// attest:enclave-attested IAM principal tag (checked by ground's SCP).
 package attestor
 
 import (
@@ -24,9 +24,13 @@ import (
 	"github.com/provabl/nitro/internal/nsm"
 )
 
-// TagNitroAttested is the IAM principal tag ground's nitro SCP checks. Defined
-// once here so the key never drifts from ground's policy / attest's resolver.
-const TagNitroAttested = "attest:nitro-attested"
+// TagEnclaveAttested is the IAM principal tag ground's SCP checks for ENCLAVE
+// attestation: it asserts the principal is running inside a verified Nitro
+// Enclave. It is deliberately distinct from tpm's attest:boot-attested (measured
+// OS boot) — a tag names what was proven, not which tool proved it, and the two
+// are different trust strengths (no conflation). See provabl ADR 0003 and the
+// canonical attest:* registry (attest-tags-schema.json, writer "nitro").
+const TagEnclaveAttested = "attest:enclave-attested"
 
 // PlatformResult is the .nitro/attestation.json artifact. Its json tags match
 // attest's schema.PlatformAttributes (the context.platform.* contract) — a JSON
@@ -74,7 +78,7 @@ type Result struct {
 
 // Attest runs the nitro provider for the target through the evidence kernel,
 // lowers the verdict, writes .nitro/attestation.json, and — when attested and a
-// roleARN is given — writes the attest:nitro-attested tag to that role.
+// roleARN is given — writes the attest:enclave-attested tag to that role.
 //
 // expectedPCRs maps PCR index ("0","8") → expected hex value; each becomes an
 // expected_pcr<N> appraiser param.
@@ -125,7 +129,7 @@ func (a *Attestor) Attest(ctx context.Context, roleARN string, expectedPCRs map[
 		if roleName == "" {
 			return nil, fmt.Errorf("could not extract role name from ARN: %s", roleARN)
 		}
-		if err := a.tagger.TagRole(ctx, roleName, map[string]string{TagNitroAttested: "true"}); err != nil {
+		if err := a.tagger.TagRole(ctx, roleName, map[string]string{TagEnclaveAttested: "true"}); err != nil {
 			return nil, fmt.Errorf("tag role %s: %w", roleName, err)
 		}
 		res.TaggedRole = roleName

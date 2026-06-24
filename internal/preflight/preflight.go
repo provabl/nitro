@@ -44,7 +44,7 @@ type iamSimAPI interface {
 
 // nitroRequiredActions are the AWS IAM actions nitro needs. nitro verifies a Nitro
 // Enclave attestation document (no AWS API for the verify); its AWS-touching
-// operation is tagging the attested principal's role with attest:nitro-attested
+// operation is tagging the attested principal's role with attest:enclave-attested
 // (iam:TagRole, via `nitro attest --role-arn`). iam:SimulatePrincipalPolicy is
 // included because this preflight itself needs it. See docs/required-permissions.md.
 var nitroRequiredActions = []string{
