@@ -48,6 +48,36 @@ The attestation document is CBOR-encoded and COSE_Sign1-signed (ES384). nitro:
 4. hands the parsed `module_id` / nonce / PCRs to the kernel appraiser, which binds the nonce and
    applies the PCR policy.
 
+## Trust model — read this
+
+What nitro's `attest:enclave-attested` verdict actually rests on, and where it stops:
+
+- **Trust anchor: the embedded AWS Nitro Attestation PKI root.** nitro verifies the document's X.509
+  chain to a root CA compiled into the binary. The guarantee is only as strong as that root being the
+  genuine AWS one and the binary not being tampered with — verify your build (cosign / SLSA provenance).
+- **Freshness is real only on `--device`.** The live `/dev/nsm` read binds *this run's* nonce, so the
+  document can't be replayed (`nonce_verified=true`). A captured `--doc` minted for a different
+  challenge verifies its signature and PCRs but reports `nonce_verified=false` — it proves the enclave
+  existed, not that it's live *now*.
+- **`attest:enclave-attested` ≠ `attest:boot-attested`.** nitro proves *running inside a verified Nitro
+  Enclave*; it says nothing about an ordinary instance's OS boot (that's tpm's measured-boot tag).
+  They are deliberately distinct trust strengths (provabl ADR 0003).
+- **The `/dev/nsm` device path is enclave-only and CI-uncovered.** It compiles behind the `nsm` build
+  tag and can only run inside a real enclave, so CI compile-checks it but cannot exercise it.
+
+## Install
+
+```bash
+go install github.com/provabl/nitro/cmd/nitro@latest   # requires Go 1.26.4+
+# or, from a clone:
+make build                                             # → bin/nitro
+make build-nsm                                         # compile the enclave-only /dev/nsm source (-tags nsm)
+```
+
+**Prerequisites.** Go 1.26.4+. The `--doc`/`--device` verification path needs no AWS access; tagging a
+role (`--role-arn`) needs `iam:TagRole` (run `nitro preflight` to check). The live `--device` read runs
+**only inside a Nitro enclave** and requires the `nsm`-tagged binary (`make build-nsm`).
+
 ## Usage
 
 ```bash
