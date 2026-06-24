@@ -19,9 +19,13 @@ Part of the [Provabl](https://provabl.dev) suite:
 AWS Nitro Enclave attestation document and turns the verdict into the durable outputs the rest of
 the suite consumes:
 
-```
-enclave NSM document  ──►  nitro  ──►  .nitro/attestation.json     (read by attest → context.platform.*)
-                                  └─►  attest:enclave-attested tag  (checked by ground's SCP)
+```mermaid
+flowchart LR
+    nsm["enclave NSM<br/>attestation document"] --> nitro["<b>nitro</b><br/>verify via evidence kernel"]
+    nitro --> json[".nitro/attestation.json"]
+    nitro --> tag["attest:enclave-attested tag"]
+    json -->|"context.platform.*"| attest["<b>attest</b><br/>Cedar PDP"]
+    tag -->|"gated by"| scp["<b>ground</b> SCP"]
 ```
 
 `attest:enclave-attested` is the enclave-integrity attestation tag — distinct from `tpm`'s
