@@ -87,8 +87,8 @@ func TestAttest_AttestedWritesArtifactAndTag(t *testing.T) {
 	}
 
 	// Tag written.
-	if tagger.calls != 1 || tagger.tags[TagNitroAttested] != "true" {
-		t.Errorf("expected one %s=true tag write, got calls=%d tags=%v", TagNitroAttested, tagger.calls, tagger.tags)
+	if tagger.calls != 1 || tagger.tags[TagEnclaveAttested] != "true" {
+		t.Errorf("expected one %s=true tag write, got calls=%d tags=%v", TagEnclaveAttested, tagger.calls, tagger.tags)
 	}
 	if tagger.roleName != "Workload" {
 		t.Errorf("role name = %q, want Workload", tagger.roleName)
