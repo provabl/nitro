@@ -37,6 +37,15 @@ the appraiser binds the challenge nonce natively, verifies the COSE_Sign1 signat
 the PCR policy; nitro supplies the real `Source` (the document) and `Verifier` (COSE/CBOR decode +
 X.509 chain to the AWS Nitro root) that the stdlib-only kernel leaves injected.
 
+## Core concepts
+
+(terms link to the suite [glossary](https://github.com/provabl/provabl/blob/main/docs/guide/glossary.md))
+
+- **[Enclave](https://github.com/provabl/provabl/blob/main/docs/guide/glossary.md#enclave)** — a hardware-isolated execution environment; an AWS Nitro Enclave can emit a signed attestation *document* proving what's running inside.
+- **[PCR](https://github.com/provabl/provabl/blob/main/docs/guide/glossary.md#pcr-platform-configuration-register)** — tamper-resistant measurement registers in the document; the appraiser checks them against an expected/[golden](https://github.com/provabl/provabl/blob/main/docs/guide/glossary.md#golden-pcr) value.
+- **[Freshness / nonce](https://github.com/provabl/provabl/blob/main/docs/guide/glossary.md#freshness--nonce)** — a live `--device` read binds *this run's* challenge, so the document can't be replayed; a captured `--doc` is verifiable but not fresh.
+- **[Lowered attribute](https://github.com/provabl/provabl/blob/main/docs/guide/glossary.md#lowered-attribute)** — nitro's verdict becomes `.nitro/attestation.json` (→ `context.platform.*`) + the `attest:enclave-attested` tag attest/ground gate on.
+
 ## Verification: the real path
 
 The attestation document is CBOR-encoded and COSE_Sign1-signed (ES384). nitro:
