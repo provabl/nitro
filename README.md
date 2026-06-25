@@ -71,6 +71,14 @@ What nitro's `attest:enclave-attested` verdict actually rests on, and where it s
 - **`attest:enclave-attested` ≠ `attest:boot-attested`.** nitro proves *running inside a verified Nitro
   Enclave*; it says nothing about an ordinary instance's OS boot (that's tpm's measured-boot tag).
   They are deliberately distinct trust strengths (provabl ADR 0003).
+- **The golden PCRs are captured from a trusted reference boot — not computed from the AMI.** Enclave
+  PCRs cannot be derived offline from an image's contents; they only exist once an enclave has booted and
+  measured itself. So `--expected-from-ami`'s `attest:pcr*` tags are ground-truth values recorded by a
+  trusted vetter run: [`vet ami-reference`](https://github.com/provabl/vet) launches the AMI on a
+  known-good instance, boots it, reads the measured PCRs from the attestation output, and locks them as
+  AMI tags. The binding is therefore only as strong as (a) that reference boot genuinely being known-good
+  and (b) the tags staying locked to the vetter principal (ground's lockdown SCP) so a running instance
+  cannot rewrite its own golden reference.
 - **The `/dev/nsm` device path is enclave-only and CI-uncovered.** It compiles behind the `nsm` build
   tag and can only run inside a real enclave, so CI compile-checks it but cannot exercise it.
 
