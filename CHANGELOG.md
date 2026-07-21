@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-21
+
 ### Security
 
 - **Bump Go 1.26.4 → 1.26.5** to clear **GO-2026-5856** (a `crypto/tls` standard-library vulnerability, fixed in go1.26.5). govulncheck flagged it as symbol-reachable via nitro's TLS calls (AWS EC2/IAM SDK, HTTPS). Toolchain bump only — no code changes.
@@ -80,5 +82,6 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
   `attest:nitro-attested` IAM principal tag (checked by ground's SCP) through an injected tagger.
 - **`nitro attest`** CLI — verify a document, write the artifact, optionally tag a role.
 
-[Unreleased]: https://github.com/provabl/nitro/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/provabl/nitro/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/provabl/nitro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/provabl/nitro/releases/tag/v0.1.0
